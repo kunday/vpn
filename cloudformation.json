@@ -31,31 +31,34 @@
         "Type": "AWS::EC2::Instance",
         "Metadata": {
           "AWS::CloudFormation::Init": {
-            "files": {
-              "/etc/openvpn/openvpn.conf": { "Fn::Join" : ["", [
-                "port 1194","\n",
-                "proto udp","\n",
-                "dev tun","\n",
-                "secret openvpn-key.txt","\n",
-                "ifconfig 192.168.2.1 192.168.2.2","\n",
-                "keepalive 10 120","\n",
-                "comp-lzo","\n",
-                "persist-key","\n",
-                "persist-tun","\n",
-                "status server-tcp.log","\n",
-                "verb 3","\n"
-                  ]]}
-            },
-            "commands": {
-              "genkey": {
-                "command": "openvpn --genkey --secret /etc/openvpn/openvpn-key.txt",
-                "ignoreErrors" : "false"
-              }
-            },
             "config": {
               "packages": {
                 "yum": {
                   "openvpn": []
+                }
+              },
+              "files": {
+                "/etc/openvpn/openvpn.conf": { "Fn::Join" : ["", [
+                  "port 1194","\n",
+                  "proto udp","\n",
+                  "dev tun","\n",
+                  "secret openvpn-key.txt","\n",
+                  "ifconfig 192.168.2.1 192.168.2.2","\n",
+                  "keepalive 10 120","\n",
+                  "comp-lzo","\n",
+                  "persist-key","\n",
+                  "persist-tun","\n",
+                  "status server-tcp.log","\n",
+                  "verb 3","\n"
+                    ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
+              "commands": {
+                "genkey": {
+                  "command": "openvpn --genkey --secret /etc/openvpn/openvpn-key.txt",
+                  "ignoreErrors" : "false"
                 }
               },
               "services": {
