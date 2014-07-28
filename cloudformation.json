@@ -1,0 +1,102 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "VPN App",
+    "Parameters": {
+      "AmiId": {
+        "Type": "String"
+      }
+    },
+    "Resources": {
+      "SSHSecurityGroup": {
+        "Type": "AWS::EC2::SecurityGroup",
+        "Properties": {
+          "GroupDescription": "Allow SSH Access",
+          "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "1194",
+            "ToPort": "1194",
+            "CidrIp": "0.0.0.0/0"
+          }
+          ]
+        }
+      },
+      "Server": {
+        "Type": "AWS::EC2::Instance",
+        "Metadata": {
+          "AWS::CloudFormation::Init": {
+            "files": {
+              "/etc/openvpn/openvpn.conf": { "Fn::Join" : ["", [
+                "port 1194","\n",
+                "proto udp","\n",
+                "dev tun","\n",
+                "secret openvpn-key.txt","\n",
+                "ifconfig 192.168.2.1 192.168.2.2","\n",
+                "keepalive 10 120","\n",
+                "comp-lzo","\n",
+                "persist-key","\n",
+                "persist-tun","\n",
+                "status server-tcp.log","\n",
+                "verb 3","\n"
+                  ]]}
+            },
+            "commands": {
+              "genkey": {
+                "command": "openvpn --genkey --secret /etc/openvpn/openvpn-key.txt",
+                "ignoreErrors" : "false"
+              }
+            },
+            "config": {
+              "packages": {
+                "yum": {
+                  "openvpn": []
+                }
+              },
+              "services": {
+                "sysvinit": {
+                  "openvpn": {
+                    "enabled": "true",
+                    "ensureRunning" : "true"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Properties": {
+          "ImageId": {
+            "Ref": "AmiId"
+          },
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "#!/bin/bash\n",
+                "/opt/aws/bin/cfn-init -v -s ", { "Ref": "AWS::StackName" },
+                " -r Server",
+                " --region ", { "Ref": "AWS::Region" }, "\n"
+                ]]
+            }
+          },
+          "InstanceType": "t1.micro",
+          "Monitoring": "false",
+          "KeyName": "kunday",
+          "SecurityGroups": [{"Ref": "SSHSecurityGroup"}]
+        }
+      }
+    },
+    "Outputs": {
+      "Server": {
+        "Value": {
+          "Fn::GetAtt": [ "Server", "PrivateIp" ]
+        }
+      }
+    }
+}
